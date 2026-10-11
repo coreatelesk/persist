@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette */
+  --color-navy: #1e3a5f;
+  --color-navy-deep: #142a46;
+  --color-moss: #2e6b4f;
+  --color-moss-deep: #245a42;
+  --color-moss-tint: #e6f0ea;
+  --color-teal: #287c7c;
+  --color-teal-tint: #e3f0ef;
+  --color-gold: #e5a323;
+  --color-gold-tint: #fbf0d6;
+  --color-gold-deep: #7d5608;
+  --color-cream: #f5f3ed;
+  --color-cream-deep: #ebe8dc;
+
+  /* Text and lines */
+  --color-ink: #1e3a5f;
+  --color-ink-2: #4a5d78;
+  --color-ink-3: #64748b;
+  --color-line: #e5e1d5;
+  --color-line-strong: #d3cebd;
+  --color-danger: #a63d2f;
+  --color-danger-tint: #fbebe8;
+
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 1.25rem;
+}
+
+:root {
+  color-scheme: light;
+  /* Heatmap scale: faint → full moss */
+  --heat-off: #f0ede4;
+  --heat-0: #e4e0d2;
+  --heat-1: #bcd5c6;
+  --heat-2: #82b09a;
+  --heat-3: #4d8a6e;
+  --heat-4: #2e6b4f;
+}
+
+/* Keep resets in the base layer so Tailwind utilities can override them. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    overflow-x: clip;
+    min-height: 100dvh;
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: #cfe3d8; color: var(--color-navy); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+}
+
+/* Heatmap cells */
+.heat {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--heat-off);
+}
+.heat[data-level="0"] { background: var(--heat-0); }
+.heat[data-level="1"] { background: var(--heat-1); }
+.heat[data-level="2"] { background: var(--heat-2); }
+.heat[data-level="3"] { background: var(--heat-3); }
+.heat[data-level="4"] { background: var(--heat-4); }
+.heat[data-today="true"] { box-shadow: 0 0 0 2px var(--color-cream), 0 0 0 4px var(--color-gold); }
+a.heat:hover { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-teal); }
+
+@keyframes check-pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.check-pop { animation: check-pop 260ms ease-out; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-cream-deep) 0%, #f7f5ef 50%, var(--color-cream-deep) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .check-pop, .skeleton { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}
