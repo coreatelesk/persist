@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Flame, Pencil, Plus, Repeat2 } from "lucide-react";
 import { archiveHabitAction, deleteHabitAction } from "@/app/actions/habits";
+import { ActionButton } from "@/components/action-button";
 import { DbProblem } from "@/components/db-problem";
+import { LimitMeter } from "@/components/limit-meter";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ConfirmForm } from "@/components/ui/confirm-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { UsageNote } from "@/components/ui/usage-note";
 import { requireUser } from "@/lib/auth/session";
 import { addDays, formatKey } from "@/lib/dates";
-import { loadUsage } from "@/lib/limits";
+import { getEntitlements, hasRoom } from "@/lib/entitlements";
 import { loadTracking } from "@/lib/tracking/data";
 import { scheduleLabel } from "@/lib/tracking/schedule";
 import { doneKey, habitRate, habitStreak, weekCount } from "@/lib/tracking/stats";
@@ -22,10 +23,11 @@ export const metadata: Metadata = { title: "Habits" };
 export default async function HabitsPage() {
   const { supabase } = await requireUser();
   const { today, timeZone } = await getToday();
-  const [t, usage] = await Promise.all([loadTracking(supabase, today, timeZone, 120), loadUsage(supabase)]);
+  const [t, ent] = await Promise.all([loadTracking(supabase, today, timeZone, 120), getEntitlements(supabase)]);
   if (!t.ok) return <DbProblem message={t.error} />;
-  const atLimit = usage.habits.used >= usage.habits.limit;
 
+  const canCreate = hasRoom(ent, "active_habits");
+  const canArchive = hasRoom(ent, "archived_habits");
   const lite = new Map(t.habitLite.map((h) => [h.id, h]));
   const archived = t.habits.filter((h) => h.archived_at);
   const last14 = Array.from({ length: 14 }, (_, i) => addDays(today, -(13 - i)));
@@ -36,21 +38,22 @@ export default async function HabitsPage() {
         title="Habits"
         description="Routines you repeat. Each check-in is saved as proof."
         action={
-          atLimit ? undefined : (
+          canCreate ? (
             <ButtonLink href="/habits/new">
               <Plus size={18} aria-hidden="true" /> New habit
             </ButtonLink>
-          )
+          ) : undefined
         }
       />
-      <UsageNote used={usage.habits.used} limit={usage.habits.limit} noun="habit" resetsOn={usage.resetsOn} />
+
+      <LimitMeter entitlements={ent} noun="habits" />
 
       {t.activeHabits.length === 0 ? (
         <EmptyState
           icon={<Repeat2 size={22} aria-hidden="true" />}
-          title="No habits yet"
-          body="Start with one that's small enough to do on your worst day."
-          action={atLimit ? undefined : <ButtonLink href="/habits/new">Create a habit</ButtonLink>}
+          title="No active habits"
+          body={archived.length ? "Restore an archived habit below, or start a new one." : "Start with one that's small enough to do on your worst day."}
+          action={canCreate ? <ButtonLink href="/habits/new">Create a habit</ButtonLink> : undefined}
         />
       ) : (
         <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -85,14 +88,18 @@ export default async function HabitsPage() {
                 </div>
                 <p className="mt-2 text-xs text-ink-3">{rate === null ? "Last 14 days" : `Last 14 days · ${rate}% of the past 30`}</p>
 
-                <div className="mt-4 flex items-center gap-1 border-t border-line pt-3">
+                <div className="mt-4 flex flex-wrap items-start gap-1 border-t border-line pt-3">
                   <Link href={`/habits/${habit.id}/edit`} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-navy hover:bg-cream-deep">
                     <Pencil size={14} aria-hidden="true" /> Edit
                   </Link>
-                  <form action={archiveHabitAction}>
-                    <input type="hidden" name="id" value={habit.id} />
-                    <button className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-ink-2 hover:bg-cream-deep">Archive</button>
-                  </form>
+                  <ActionButton
+                    action={archiveHabitAction}
+                    id={habit.id}
+                    label="Archive"
+                    pendingLabel="Archiving…"
+                    disabled={!canArchive}
+                    disabledNote="Archive is full. Delete or restore an archived habit first."
+                  />
                   <span className="ml-auto">
                     <ConfirmForm action={deleteHabitAction} id={habit.id} confirmLabel="Delete forever" />
                   </span>
@@ -103,26 +110,32 @@ export default async function HabitsPage() {
         </ul>
       )}
 
-      {archived.length > 0 && <ArchivedList habits={archived} />}
+      {archived.length > 0 && <ArchivedList habits={archived} canRestore={canCreate} />}
     </div>
   );
 }
 
-function ArchivedList({ habits }: { habits: Habit[] }) {
+function ArchivedList({ habits, canRestore }: { habits: Habit[]; canRestore: boolean }) {
   return (
-    <details className="rounded-[var(--radius-card)] border border-line bg-white/70 p-5">
+    <details className="rounded-[var(--radius-card)] border border-line bg-white/70 p-5" open={!canRestore}>
       <summary className="cursor-pointer font-display text-lg font-semibold text-navy">Archived ({habits.length})</summary>
-      <p className="mt-2 text-sm text-ink-2">Archived habits stay in your history but no longer appear on Today.</p>
+      <p className="mt-2 text-sm text-ink-2">
+        Archived habits keep all their history but no longer appear on Today.
+        {!canRestore && " Your active habits are full, so archive or delete one before restoring."}
+      </p>
       <ul className="mt-3 divide-y divide-line">
         {habits.map((h) => (
-          <li key={h.id} className="flex items-center justify-between gap-3 py-2.5">
-            <span className="truncate font-medium text-navy">{h.title}</span>
-            <div className="flex shrink-0 items-center">
-              <form action={archiveHabitAction}>
-                <input type="hidden" name="id" value={h.id} />
-                <input type="hidden" name="restore" value="1" />
-                <button className="min-h-10 rounded-lg px-3 text-sm font-semibold text-teal hover:bg-teal-tint">Restore</button>
-              </form>
+          <li key={h.id} className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 py-2.5">
+            <span className="min-w-0 max-w-full truncate py-2 font-medium text-navy">{h.title}</span>
+            <div className="flex shrink-0 items-start">
+              <ActionButton
+                action={archiveHabitAction}
+                id={h.id}
+                label="Restore"
+                pendingLabel="Restoring…"
+                restore
+                disabled={!canRestore}
+              />
               <ConfirmForm action={deleteHabitAction} id={h.id} confirmLabel="Delete forever" />
             </div>
           </li>

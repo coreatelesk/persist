@@ -15,6 +15,9 @@ export function ChallengeForm({ today }: { today: string }) {
   const [duration, setDuration] = useState(30);
   const [target, setTarget] = useState("");
   const [startsOn, setStartsOn] = useState(today);
+  // Controlled, because React resets uncontrolled fields after every submit, even a failed one.
+  const [title, setTitle] = useState("");
+  const [why, setWhy] = useState("");
   const errors = state.fieldErrors ?? {};
 
   const validDuration = Number.isInteger(duration) && duration >= 1 && duration <= 365;
@@ -29,6 +32,8 @@ export function ChallengeForm({ today }: { today: string }) {
           required
           maxLength={100}
           autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="30 days of writing"
           aria-invalid={!!errors.title}
           className={inputClass}
@@ -41,6 +46,8 @@ export function ChallengeForm({ today }: { today: string }) {
           name="description"
           rows={3}
           maxLength={500}
+          value={why}
+          onChange={(e) => setWhy(e.target.value)}
           placeholder="Finish the first draft of my book."
           className={`${inputClass} py-3`}
         />

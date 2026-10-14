@@ -23,7 +23,7 @@ export function describeChallenge(challenge: Challenge, done: number, today: str
 
   let phase: ChallengePhase;
   if (challenge.status === "archived") phase = "archived";
-  else if (challenge.status === "completed" || reached) phase = "completed";
+  else if (reached) phase = "completed";
   else if (challenge.status === "ended" || today > challenge.ends_on) phase = "ended";
   else if (today < challenge.starts_on) phase = "upcoming";
   else phase = "active";

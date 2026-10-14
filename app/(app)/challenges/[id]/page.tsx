@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
-import { deleteChallengeAction, endChallengeAction } from "@/app/actions/challenges";
+import { archiveChallengeAction, deleteChallengeAction, endChallengeAction } from "@/app/actions/challenges";
+import { ActionButton } from "@/components/action-button";
 import { challengeNote, PhaseBadge } from "@/components/challenge-card";
 import { CheckinButton } from "@/components/checkin-button";
 import { DbProblem } from "@/components/db-problem";
@@ -14,6 +15,7 @@ import { addDays, formatKey, diffDays } from "@/lib/dates";
 import { friendlyDbError } from "@/lib/db-errors";
 import { describeChallenge } from "@/lib/tracking/challenges";
 import { idSchema } from "@/lib/validation";
+import { getEntitlements, hasRoom } from "@/lib/entitlements";
 import { getToday } from "@/lib/tz";
 import type { Challenge } from "@/lib/tracking/types";
 
@@ -25,6 +27,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
   const { supabase } = await requireUser();
   const { today } = await getToday();
 
+  const ent = await getEntitlements(supabase);
   const [challengeRes, doneRes] = await Promise.all([
     supabase
       .from("challenges")
@@ -111,14 +114,29 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
         )}
       </Card>
 
-      <div className="flex flex-wrap items-center gap-1">
-        {view.phase === "active" && (
-          <form action={endChallengeAction}>
-            <input type="hidden" name="id" value={challenge.id} />
-            <button className="min-h-10 rounded-lg px-3 text-sm font-semibold text-ink-2 hover:bg-cream-deep">End challenge early</button>
-          </form>
+      <div className="flex flex-wrap items-start gap-1">
+        {view.phase === "active" && <ActionButton action={endChallengeAction} id={challenge.id} label="End challenge early" pendingLabel="Ending…" />}
+        {view.phase === "archived" ? (
+          <ActionButton
+            action={archiveChallengeAction}
+            id={challenge.id}
+            label="Restore challenge"
+            pendingLabel="Restoring…"
+            restore
+            disabled={!challenge.completed_at && today <= challenge.ends_on && !hasRoom(ent, "active_challenges")}
+            disabledNote="Your active challenges are full. Finish, archive, or delete one first."
+          />
+        ) : (
+          <ActionButton
+            action={archiveChallengeAction}
+            id={challenge.id}
+            label="Archive"
+            pendingLabel="Archiving…"
+            disabled={!hasRoom(ent, "archived_challenges")}
+            disabledNote="Archive is full. Delete or restore an archived challenge first."
+          />
         )}
-        <ConfirmForm action={deleteChallengeAction} id={challenge.id} confirmLabel="Delete forever" label="Delete challenge" />
+        <ConfirmForm action={deleteChallengeAction} id={challenge.id} confirmLabel="Delete forever" label="Delete challenge" redirectAfter />
       </div>
     </div>
   );

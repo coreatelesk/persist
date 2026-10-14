@@ -65,9 +65,10 @@ export async function updateHabitAction(id: string, _prev: ActionState, formData
   redirect("/habits");
 }
 
-export async function archiveHabitAction(formData: FormData) {
+/** Archives or restores a habit. The database enforces the active and archived limits. */
+export async function archiveHabitAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const id = idSchema.safeParse(formData.get("id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "That habit couldn't be found." };
   const restore = formData.get("restore") === "1";
   const { supabase, user } = await requireUser();
   const { error } = await supabase
@@ -75,15 +76,17 @@ export async function archiveHabitAction(formData: FormData) {
     .update({ archived_at: restore ? null : new Date().toISOString() })
     .eq("id", id.data)
     .eq("user_id", user.id);
-  if (error) friendlyDbError(error);
+  if (error) return { error: friendlyDbError(error, restore ? "We couldn't restore that habit." : "We couldn't archive that habit.") };
   refresh();
+  return { ok: true };
 }
 
-export async function deleteHabitAction(formData: FormData) {
+export async function deleteHabitAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const id = idSchema.safeParse(formData.get("id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "That habit couldn't be found." };
   const { supabase, user } = await requireUser();
   const { error } = await supabase.from("habits").delete().eq("id", id.data).eq("user_id", user.id);
-  if (error) friendlyDbError(error);
+  if (error) return { error: friendlyDbError(error, "We couldn't delete that habit.") };
   refresh();
+  return { ok: true };
 }

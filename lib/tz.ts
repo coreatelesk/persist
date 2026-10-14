@@ -2,7 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { isValidTimeZone, todayIn } from "@/lib/dates";
 
-export const TZ_COOKIE = "persist-tz";
+import { TZ_COOKIE } from "@/lib/tz-constants";
+export { TZ_COOKIE };
 
 /** The visitor's IANA time zone, set by <TimezoneSync />. Falls back to UTC. */
 export async function getTimeZone(): Promise<string> {

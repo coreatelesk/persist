@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Flag, LayoutDashboard, Repeat2 } from "lucide-react";
+import { CalendarDays, Flag, LayoutDashboard, Repeat2, Shield, UserRound } from "lucide-react";
 
 const links = [
   { href: "/dashboard", label: "Today", icon: LayoutDashboard },
@@ -16,7 +16,7 @@ function useActive() {
   return (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SidebarNav() {
+export function SidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const isActive = useActive();
   return (
     <nav aria-label="Main" className="mt-10 space-y-1">
@@ -34,6 +34,26 @@ export function SidebarNav() {
             <Icon size={19} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
             {label}
             {active && <span className="ml-auto size-1.5 rounded-full bg-gold" aria-hidden="true" />}
+          </Link>
+        );
+      })}
+      <div className="my-3 h-px bg-white/10" aria-hidden="true" />
+      {[
+        { href: "/account", label: "Account", icon: UserRound },
+        ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Shield }] : []),
+      ].map(({ href, label, icon: Icon }) => {
+        const active = isActive(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] font-medium transition ${
+              active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8 hover:text-white"
+            }`}
+          >
+            <Icon size={19} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+            {label}
           </Link>
         );
       })}

@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { Heatmap, HeatmapLegend } from "@/components/heatmap";
+import { LegalFooter } from "@/components/legal-footer";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getSession } from "@/lib/auth/session";
 import { APP_NAME, taglineLines } from "@/lib/brand";
 import { sampleDays } from "@/lib/sample";
 import { getToday } from "@/lib/tz";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ account_deleted?: string }> }) {
+  const params = await searchParams;
   if (await getSession()) redirect("/dashboard");
   const { today } = await getToday();
 
@@ -20,7 +22,12 @@ export default async function Home() {
         </ButtonLink>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 pb-20 pt-10 sm:px-8 sm:pt-20">
+      <main className="mx-auto max-w-6xl px-5 pb-12 pt-10 sm:px-8 sm:pt-20">
+        {params.account_deleted === "1" && (
+          <p role="status" className="mb-8 max-w-xl rounded-xl bg-moss-tint px-4 py-3 text-sm font-medium text-moss-deep">
+            Your account and its data have been deleted. Thanks for trying {APP_NAME}.
+          </p>
+        )}
         <h1 className="max-w-3xl font-display text-5xl font-bold leading-[1.02] text-navy sm:text-7xl">
           {taglineLines().map((line, i) => (
             <span key={i} className="block">
@@ -64,6 +71,7 @@ export default async function Home() {
           ))}
         </ul>
       </main>
+      <LegalFooter className="mx-auto max-w-6xl px-5 pb-10 sm:px-8" />
     </div>
   );
 }

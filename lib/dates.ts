@@ -87,6 +87,32 @@ function partsIn(timeZone: string, now: Date) {
   return { year: get("year"), month: get("month"), day: get("day"), hour: Number(get("hour")) };
 }
 
+/**
+ * Browsers still report some zones by legacy names (Chrome says "Asia/Calcutta" for India).
+ * Not every database knows those aliases, so names sent to the database are first mapped to
+ * their canonical IANA equivalents.
+ */
+const LEGACY_ZONES: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Asia/Rangoon": "Asia/Yangon",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Dacca": "Asia/Dhaka",
+  "Asia/Thimbu": "Asia/Thimphu",
+  "Asia/Ulan_Bator": "Asia/Ulaanbaatar",
+  "Asia/Macao": "Asia/Macau",
+  "Europe/Kiev": "Europe/Kyiv",
+  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+  "America/Indianapolis": "America/Indiana/Indianapolis",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
+  "Pacific/Truk": "Pacific/Chuuk",
+  "Pacific/Ponape": "Pacific/Pohnpei",
+};
+
+export function canonicalTimeZone(timeZone: string): string {
+  return LEGACY_ZONES[timeZone] ?? timeZone;
+}
+
 /** The calendar date it currently is in the given IANA time zone. */
 export function todayIn(timeZone: string, now: Date = new Date()): string {
   const { year, month, day } = partsIn(timeZone, now);
@@ -104,16 +130,33 @@ export function keyInZone(iso: string, timeZone: string): string {
 
 type Style = "long" | "medium" | "short" | "month" | "monthShort" | "weekdayShort";
 
+// Fixed English names, not Intl. Server and browser locale data differ slightly
+// (for example "Tue 13 Oct" vs "Tue, 13 Oct"), and any difference in text that is rendered
+// on both sides causes a React hydration error.
+const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 export function formatKey(key: string, style: Style = "medium"): string {
-  const options: Record<Style, Intl.DateTimeFormatOptions> = {
-    long: { weekday: "long", day: "numeric", month: "long" },
-    medium: { weekday: "short", day: "numeric", month: "short" },
-    short: { day: "numeric", month: "short" },
-    month: { month: "long", year: "numeric" },
-    monthShort: { month: "short" },
-    weekdayShort: { weekday: "short" },
-  };
-  return new Intl.DateTimeFormat("en-GB", { ...options[style], timeZone: "UTC" }).format(parseKey(key));
+  const date = parseKey(key);
+  const day = date.getUTCDate();
+  const wd = date.getUTCDay();
+  const m = date.getUTCMonth();
+  switch (style) {
+    case "long":
+      return `${WEEKDAYS_LONG[wd]} ${day} ${MONTHS_LONG[m]}`;
+    case "medium":
+      return `${WEEKDAYS_SHORT[wd]} ${day} ${MONTHS_SHORT[m]}`;
+    case "short":
+      return `${day} ${MONTHS_SHORT[m]}`;
+    case "month":
+      return `${MONTHS_LONG[m]} ${date.getUTCFullYear()}`;
+    case "monthShort":
+      return MONTHS_SHORT[m];
+    case "weekdayShort":
+      return WEEKDAYS_SHORT[wd];
+  }
 }
 
 export const WEEKDAYS_MON_FIRST = [

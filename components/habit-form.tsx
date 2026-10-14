@@ -23,6 +23,9 @@ export function HabitForm({ habit }: { habit?: Habit }) {
   const [kind, setKind] = useState<HabitSchedule["kind"]>(initial.kind);
   const [days, setDays] = useState<number[]>(initial.kind === "custom" ? initial.days : [1, 3, 5]);
   const [target, setTarget] = useState(initial.kind === "weekly_target" ? initial.target : 3);
+  // Controlled, because React resets uncontrolled fields after every submit, even a failed one.
+  const [title, setTitle] = useState(habit?.title ?? "");
+  const [note, setNote] = useState(habit?.description ?? "");
   const errors = state.fieldErrors ?? {};
 
   return (
@@ -34,7 +37,8 @@ export function HabitForm({ habit }: { habit?: Habit }) {
           required
           maxLength={80}
           autoFocus={!habit}
-          defaultValue={habit?.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="Read for 20 minutes"
           aria-invalid={!!errors.title}
           className={inputClass}
@@ -46,7 +50,8 @@ export function HabitForm({ habit }: { habit?: Habit }) {
           id="description"
           name="description"
           maxLength={240}
-          defaultValue={habit?.description ?? ""}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
           placeholder="Even two pages counts"
           className={inputClass}
         />

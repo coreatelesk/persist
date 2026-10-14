@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CalendarCheck, Flame, Plus, Repeat2, TrendingUp } from "lucide-react";
+import { AdBanner } from "@/components/ads/ad-banner";
 import { ChallengeCard } from "@/components/challenge-card";
 import { DbProblem } from "@/components/db-problem";
 import { Heatmap, HeatmapLegend } from "@/components/heatmap";
@@ -9,7 +10,8 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireUser } from "@/lib/auth/session";
+import { getProfile, requireUser } from "@/lib/auth/session";
+import { getEntitlements, hasRoom } from "@/lib/entitlements";
 import { addDays, formatKey, hourIn } from "@/lib/dates";
 import { describeChallenge } from "@/lib/tracking/challenges";
 import { loadTracking } from "@/lib/tracking/data";
@@ -39,11 +41,12 @@ function milestone(streak: number) {
 export default async function DashboardPage() {
   const { supabase, user } = await requireUser();
   const { today, timeZone } = await getToday();
-  const t = await loadTracking(supabase, today, timeZone);
+  const [t, ent, profile] = await Promise.all([loadTracking(supabase, today, timeZone), getEntitlements(supabase), getProfile()]);
   if (!t.ok) return <DbProblem message={t.error} />;
 
   const hour = hourIn(timeZone);
-  const first = typeof user.user_metadata?.name === "string" ? user.user_metadata.name.split(" ")[0] : "";
+  const fullName = profile?.displayName || (typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "");
+  const first = fullName.trim().split(" ")[0] ?? "";
   const greeting = `${hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"}${first ? `, ${first}` : ""}`;
 
   const liteById = new Map(t.habitLite.map((h) => [h.id, h]));
@@ -99,9 +102,15 @@ export default async function DashboardPage() {
         title={greeting}
         description={formatKey(today, "long")}
         action={
-          <ButtonLink href="/habits/new">
-            <Plus size={18} aria-hidden="true" /> New habit
-          </ButtonLink>
+          hasRoom(ent, "active_habits") ? (
+            <ButtonLink href="/habits/new">
+              <Plus size={18} aria-hidden="true" /> New habit
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/habits" variant="quiet">
+              Manage habits
+            </ButtonLink>
+          )
         }
       />
 
@@ -161,6 +170,8 @@ export default async function DashboardPage() {
           <Heatmap days={heatDays} today={today} />
         </div>
       </Card>
+
+      <AdBanner entitlements={ent} />
     </div>
   );
 }

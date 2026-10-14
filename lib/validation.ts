@@ -52,3 +52,30 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
   }
   return out;
 }
+
+/** Accepts spaces, dashes and brackets while typing; stores digits with an optional leading +. */
+export function normalizeMobile(raw: string): string {
+  const trimmed = raw.trim();
+  const plus = trimmed.startsWith("+") ? "+" : "";
+  return plus + trimmed.replace(/\D/g, "");
+}
+
+const MOBILE_MESSAGE = "Enter a valid number with 7 to 15 digits, for example +919876543210.";
+
+/** True when `raw` is empty, or looks like a phone number (digits plus spaces, dashes, dots, brackets, optional leading +). */
+export function isValidMobile(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (trimmed === "") return true;
+  if (!/^\+?[0-9\s().-]+$/.test(trimmed)) return false;
+  return /^\+?[0-9]{7,15}$/.test(normalizeMobile(trimmed));
+}
+
+export const profileSchema = z.object({
+  displayName: z.string().trim().max(60, "Use 60 characters or fewer.").default(""),
+  mobile: z
+    .string()
+    .trim()
+    .default("")
+    .refine(isValidMobile, MOBILE_MESSAGE)
+    .transform((v) => (v === "" ? "" : normalizeMobile(v))),
+});

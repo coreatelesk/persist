@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import type { ActionState } from "@/lib/action-state";
 import { addDays } from "@/lib/dates";
 import { friendlyDbError } from "@/lib/db-errors";
+import { getToday } from "@/lib/tz";
 import { challengeSchema, fieldErrors, idSchema } from "@/lib/validation";
 
 function refresh() {
@@ -44,9 +45,39 @@ export async function createChallengeAction(_prev: ActionState, formData: FormDa
   redirect(`/challenges/${data.id}`);
 }
 
-export async function endChallengeAction(formData: FormData) {
+/** Archives or restores a challenge. The database enforces the active and archived limits. */
+export async function archiveChallengeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const id = idSchema.safeParse(formData.get("id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "That challenge couldn't be found." };
+  const restore = formData.get("restore") === "1";
+  const { supabase, user } = await requireUser();
+
+  let status = "archived";
+  if (restore) {
+    const { data, error } = await supabase
+      .from("challenges")
+      .select("ends_on,completed_at,status")
+      .eq("id", id.data)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) return { error: friendlyDbError(error, "We couldn't restore that challenge.") };
+    if (!data) return { error: "That challenge couldn't be found." };
+    const { today } = await getToday();
+    // Bring it back to where it was: finished challenges stay finished, running ones become active again.
+    status = data.completed_at ? "completed" : today > data.ends_on ? "ended" : "active";
+  }
+
+  // Archiving works from any non-archived status; restoring only from archived.
+  const query = supabase.from("challenges").update({ status }).eq("id", id.data).eq("user_id", user.id);
+  const { error } = await (restore ? query.eq("status", "archived") : query.neq("status", "archived"));
+  if (error) return { error: friendlyDbError(error, restore ? "We couldn't restore that challenge." : "We couldn't archive that challenge.") };
+  refresh();
+  return { ok: true };
+}
+
+export async function endChallengeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const id = idSchema.safeParse(formData.get("id"));
+  if (!id.success) return { error: "That challenge couldn't be found." };
   const { supabase, user } = await requireUser();
   const { error } = await supabase
     .from("challenges")
@@ -54,19 +85,18 @@ export async function endChallengeAction(formData: FormData) {
     .eq("id", id.data)
     .eq("user_id", user.id)
     .eq("status", "active");
-  if (error) friendlyDbError(error);
+  if (error) return { error: friendlyDbError(error, "We couldn't end that challenge.") };
   refresh();
+  return { ok: true };
 }
 
-export async function deleteChallengeAction(formData: FormData) {
+export async function deleteChallengeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const id = idSchema.safeParse(formData.get("id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "That challenge couldn't be found." };
   const { supabase, user } = await requireUser();
   const { error } = await supabase.from("challenges").delete().eq("id", id.data).eq("user_id", user.id);
-  if (error) {
-    friendlyDbError(error);
-    return;
-  }
+  if (error) return { error: friendlyDbError(error, "We couldn't delete that challenge.") };
   refresh();
-  redirect("/challenges");
+  if (formData.get("redirect") === "1") redirect("/challenges");
+  return { ok: true };
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth-form";
 import { Brand } from "@/components/brand";
+import { LegalFooter } from "@/components/legal-footer";
 import { Heatmap } from "@/components/heatmap";
 import { SetupNotice } from "@/components/setup-notice";
 import { getSession } from "@/lib/auth/session";
@@ -36,6 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
           <AuthForm next={next} googleEnabled={googleEnabled} />
         </div>
+        <LegalFooter />
       </section>
 
       <aside className="hidden flex-col justify-center overflow-hidden bg-navy px-12 text-white lg:flex">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, diffDays, isDateKey, mondayIndex, startOfWeek, todayIn } from "@/lib/dates";
+import { addDays, canonicalTimeZone, formatKey, diffDays, isDateKey, mondayIndex, startOfWeek, todayIn } from "@/lib/dates";
 
 describe("date keys", () => {
   it("validates real calendar dates only", () => {
@@ -31,5 +31,28 @@ describe("todayIn", () => {
 
   it("falls back to UTC for an unknown zone", () => {
     expect(todayIn("Not/AZone", new Date("2026-10-09T20:30:00Z"))).toBe("2026-10-09");
+  });
+});
+
+describe("canonicalTimeZone", () => {
+  it("maps legacy browser names to canonical ones and leaves others alone", () => {
+    expect(canonicalTimeZone("Asia/Calcutta")).toBe("Asia/Kolkata");
+    expect(canonicalTimeZone("Europe/Kiev")).toBe("Europe/Kyiv");
+    expect(canonicalTimeZone("America/New_York")).toBe("America/New_York");
+    expect(canonicalTimeZone("UTC")).toBe("UTC");
+  });
+  it("computes the right local date for the legacy India name too", () => {
+    expect(todayIn("Asia/Calcutta", new Date("2026-10-09T20:30:00Z"))).toBe("2026-10-10");
+  });
+});
+
+describe("formatKey is deterministic (no locale data, so server and browser always agree)", () => {
+  it("formats every style the same way every time", () => {
+    expect(formatKey("2026-10-13", "long")).toBe("Tuesday 13 October");
+    expect(formatKey("2026-10-13", "medium")).toBe("Tue 13 Oct");
+    expect(formatKey("2026-09-05", "short")).toBe("5 Sep");
+    expect(formatKey("2026-10-13", "month")).toBe("October 2026");
+    expect(formatKey("2026-10-13", "monthShort")).toBe("Oct");
+    expect(formatKey("2026-10-13", "weekdayShort")).toBe("Tue");
   });
 });
