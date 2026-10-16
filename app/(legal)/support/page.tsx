@@ -47,6 +47,12 @@ export default function SupportPage() {
             <strong>How do I delete my account?</strong> Sign in and open <Link href="/account/delete">Delete account</Link>. It permanently removes your data.
           </li>
           <li>
+            <strong>How do I get a copy of my data?</strong> Sign in and use the download buttons on the <Link href="/account">Account</Link> page.
+          </li>
+          <li>
+            <strong>I have an idea or found a bug.</strong> Send it from the <Link href="/feedback">Feedback</Link> page and follow its status there.
+          </li>
+          <li>
             <strong>Can I change my name or phone number?</strong> Yes, on the <Link href="/account">Account</Link> page.
           </li>
         </ul>

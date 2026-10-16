@@ -146,7 +146,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                   {body}
                 </span>
               ) : (
-                <Link key={date} href={`/history?month=${visibleMonth}&date=${date}`} aria-label={label} aria-current={isSelected ? "date" : undefined} className="rounded-lg">
+                <Link key={date} href={`/history?month=${visibleMonth}&date=${date}`} prefetch={false} aria-label={label} aria-current={isSelected ? "date" : undefined} className="rounded-lg">
                   {body}
                 </Link>
               );

@@ -91,7 +91,8 @@ export function Heatmap({
                 title: describe(day),
               };
               return linkToHistory ? (
-                <Link key={day.date} href={`/history?date=${day.date}`} aria-label={describe(day)} {...props} />
+                // Hundreds of cells: prefetching each one would flood the network, so it is switched off.
+                <Link key={day.date} href={`/history?date=${day.date}`} prefetch={false} aria-label={describe(day)} {...props} />
               ) : (
                 <span key={day.date} {...props} />
               );

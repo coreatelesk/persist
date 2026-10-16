@@ -14,7 +14,7 @@ export default async function LegalLayout({ children }: { children: React.ReactN
         </ButtonLink>
       </header>
       <main className="mx-auto max-w-3xl px-5 pb-12 pt-4 sm:px-8">{children}</main>
-      <LegalFooter className="mx-auto max-w-3xl border-t border-line px-5 py-8 sm:px-8" />
+      <LegalFooter variant="site" className="mt-8" />
     </div>
   );
 }

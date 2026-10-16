@@ -12,6 +12,7 @@ export type AdminOverview = {
   habits: { total: number; active: number; archived: number };
   challenges: { total: number; active: number; archived: number; finished: number };
   checkins: { total: number; today: number; last_7d: number; last_30d: number };
+  feedback: { total: number; new: number; last_7d: number };
 };
 
 export type SeriesPoint = {
@@ -93,6 +94,34 @@ export const USER_SORTS = [
 ] as const;
 
 export const PAGE_SIZE = 25;
+
+export type FeedbackItem = {
+  id: string;
+  category: string;
+  message: string;
+  status: string;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  display_name: string | null;
+  email: string;
+  total_count: number;
+};
+
+export type FeedbackCounts = { total: number; new: number; reviewing: number; planned: number; done: number; declined: number };
+
+export async function loadFeedback(supabase: SupabaseClient, params: { status?: string; category?: string; page?: number }) {
+  const status = ["new", "reviewing", "planned", "done", "declined"].includes(params.status ?? "") ? params.status! : null;
+  const category = ["feature", "improvement", "bug", "other"].includes(params.category ?? "") ? params.category! : null;
+  const page = Math.max(1, Math.floor(params.page ?? 1));
+  const [list, counts] = await Promise.all([
+    supabase.rpc("admin_feedback_list", { p_status: status, p_category: category, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE }),
+    supabase.rpc("admin_feedback_counts"),
+  ]);
+  const rows = unwrap((list.data as FeedbackItem[] | null) ?? [], list.error);
+  return { rows, total: rows[0] ? Number(rows[0].total_count) : 0, counts: unwrap(counts.data as FeedbackCounts | null, counts.error), status, category, page };
+}
 
 export async function loadUsers(supabase: SupabaseClient, params: { q?: string; sort?: string; page?: number }) {
   const sort = USER_SORTS.find((s) => s.value === params.sort)?.value ?? "created_desc";

@@ -24,7 +24,7 @@ export type Entitlements = {
 export const FREE_DEFAULTS: Entitlements = {
   plan: "free",
   planName: "Free",
-  limits: { active_habits: 10, active_challenges: 10, archived_habits: 20, archived_challenges: 20 },
+  limits: { active_habits: 20, active_challenges: 10, archived_habits: 20, archived_challenges: 20 },
   usage: { active_habits: 0, active_challenges: 0, archived_habits: 0, archived_challenges: 0 },
   features: { ad_free: false, reminders: false },
 };

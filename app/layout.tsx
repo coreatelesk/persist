@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/figtree";
 import "@fontsource-variable/bricolage-grotesque";
 import "./globals.css";
+import { adsEnabled } from "@/lib/ads/config";
+import { CookieConsent } from "@/components/cookie-consent";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { SITE } from "@/lib/site";
 
@@ -22,7 +24,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieConsent adsEnabled={adsEnabled()} />
+      </body>
     </html>
   );
 }

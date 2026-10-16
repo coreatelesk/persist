@@ -28,7 +28,10 @@ export default function PrivacyPage() {
             <strong>Activity records:</strong> when you create, edit, archive, or restore a habit, manage a challenge, or complete a check-in, we record the type of action, a timestamp, and an internal item ID. These records never contain the names or notes of your habits or challenges. We use them to work out when you were last active and to understand overall use of the service.
           </li>
           <li>
-            <strong>Technical data:</strong> cookies that keep you signed in and remember your time zone (see <Link href="/cookies">Advertising and cookies</Link>). Our hosting and database providers may also keep standard server logs, such as IP addresses, for security and operation.
+            <strong>Feedback you send:</strong> the type, your message, the time, and the status or reply the team gives. It is visible to you and to the platform owner, and is deleted with your account.
+          </li>
+          <li>
+            <strong>Technical data:</strong> cookies that keep you signed in, remember your time zone, and remember your cookie choice (see <Link href="/cookies">Advertising and cookies</Link>). Our hosting and database providers may also keep standard server logs, such as IP addresses, for security and operation.
           </li>
         </ul>
       </Section>
@@ -76,11 +79,13 @@ export default function PrivacyPage() {
         <p>We keep your data while your account exists. When you delete your account, your profile, habits, challenges, check-ins, and activity records are deleted. Backups held by our database provider may keep a copy for a limited time until they expire.</p>
       </Section>
 
-      <Section title="Your choices">
+      <Section title="Your choices" id="your-choices">
         <ul>
           <li>Update your name and mobile number any time on the <Link href="/account">Account</Link> page.</li>
+          <li>Download a copy of your data (JSON, or a CSV of your check-ins) from the <Link href="/account">Account</Link> page.</li>
+          <li>Change your cookie choices any time with &ldquo;Cookie settings&rdquo; in the footer.</li>
           <li>Delete individual habits and challenges, or delete your whole account from <Link href="/account/delete">Delete account</Link> (you must be signed in).</li>
-          <li>For anything else, such as a question about your data or a request for a copy, contact support.</li>
+          <li>For anything else, such as a question about your data, contact support.</li>
         </ul>
       </Section>
 

@@ -41,6 +41,10 @@ export default function TermsPage() {
         <p>You own what you put into {APP_NAME}. You give us permission to store and process it only as needed to run the service for you, as described in the <Link href="/privacy">Privacy Policy</Link>.</p>
       </Section>
 
+      <Section title="Feedback">
+        <p>If you send us ideas or suggestions, we may use them to improve the service without obligation or payment to you. We can&apos;t promise that any suggestion will be built.</p>
+      </Section>
+
       <Section title="Availability and changes">
         <p>We aim to keep the service running but can&apos;t guarantee it will always be available or free of errors. We may change, suspend, or discontinue features, and we may update these terms. Continued use after an update means you accept the new terms.</p>
       </Section>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Download } from "lucide-react";
 import { AccountForm } from "@/components/account-form";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -49,9 +49,30 @@ export default async function AccountPage() {
       </Card>
 
       <Card>
+        <CardTitle hint="Your habits, challenges and check-ins belong to you. Download a copy any time.">Your data</CardTitle>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <a
+            href="/account/export?format=json"
+            download
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-white px-5 text-sm font-semibold text-navy hover:bg-cream-deep"
+          >
+            <Download size={16} aria-hidden="true" /> Download everything (JSON)
+          </a>
+          <a
+            href="/account/export?format=csv"
+            download
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-strong bg-white px-5 text-sm font-semibold text-navy hover:bg-cream-deep"
+          >
+            <Download size={16} aria-hidden="true" /> Check-ins for spreadsheets (CSV)
+          </a>
+        </div>
+      </Card>
+
+      <Card>
         <CardTitle>Help and policies</CardTitle>
         <ul className="mt-3 divide-y divide-line">
           {[
+            ["/feedback", "Share an idea or report a problem"],
             ["/support", "Contact support"],
             ["/privacy", "Privacy Policy"],
             ["/terms", "Terms of Service"],

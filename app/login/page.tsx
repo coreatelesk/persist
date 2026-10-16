@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; mode?: string }> }) {
   if (!isSupabaseConfigured()) return <SetupNotice />;
   if (await getSession()) redirect("/dashboard");
 
@@ -35,9 +35,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               {params.error}
             </p>
           )}
-          <AuthForm next={next} googleEnabled={googleEnabled} />
+          <AuthForm next={next} googleEnabled={googleEnabled} initialMode={params.mode === "signup" ? "signup" : "signin"} />
         </div>
-        <LegalFooter />
+        <LegalFooter variant="app" className="mt-4" />
       </section>
 
       <aside className="hidden flex-col justify-center overflow-hidden bg-navy px-12 text-white lg:flex">

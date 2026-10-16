@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Activity, CalendarCheck, Flag, Repeat2, UserMinus, UserPlus, Users } from "lucide-react";
+import { Activity, CalendarCheck, Flag, MessageSquarePlus, Repeat2, UserMinus, UserPlus, Users } from "lucide-react";
 import { TrendChart } from "@/components/admin/trend-chart";
 import { Stat } from "@/components/stat";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -65,10 +65,13 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
 
       <section aria-label="Content" className="space-y-3">
         <h2 className="font-display text-xl font-semibold text-navy">Content and check-ins</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat icon={<Repeat2 size={15} aria-hidden="true" />} label="Habits" value={n(o.habits.total)} note={`${n(o.habits.active)} active · ${n(o.habits.archived)} archived`} />
           <Stat icon={<Flag size={15} aria-hidden="true" />} label="Challenges" value={n(o.challenges.total)} note={`${n(o.challenges.active)} active · ${n(o.challenges.finished)} finished · ${n(o.challenges.archived)} archived`} />
           <Stat icon={<CalendarCheck size={15} aria-hidden="true" />} label="Check-ins" value={n(o.checkins.total)} note={`Today ${n(o.checkins.today)} · 7 days ${n(o.checkins.last_7d)} · 30 days ${n(o.checkins.last_30d)}`} />
+          <Link href="/admin/feedback" aria-label="Open feedback inbox" className="block rounded-[var(--radius-card)] transition hover:shadow-sm">
+            <Stat icon={<MessageSquarePlus size={15} aria-hidden="true" />} label="Feedback" value={n(o.feedback.new)} note={`new · ${n(o.feedback.total)} total · ${n(o.feedback.last_7d)} this week`} accent={o.feedback.new > 0} />
+          </Link>
         </div>
       </section>
 

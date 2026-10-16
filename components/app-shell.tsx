@@ -55,7 +55,7 @@ export function AppShell({ email, isAdmin = false, children }: { email?: string 
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-8 md:pb-16 md:pt-10 lg:px-10">{children}
-          <LegalFooter className="mt-12 border-t border-line pt-5" />
+          <LegalFooter variant="app" className="mt-12" />
         </main>
       </div>
 

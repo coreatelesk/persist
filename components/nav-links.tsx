@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Flag, LayoutDashboard, Repeat2, Shield, UserRound } from "lucide-react";
+import { CalendarDays, Flag, LayoutDashboard, MessageSquarePlus, Repeat2, Shield, UserRound } from "lucide-react";
 
 const links = [
   { href: "/dashboard", label: "Today", icon: LayoutDashboard },
@@ -40,6 +40,7 @@ export function SidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {
       <div className="my-3 h-px bg-white/10" aria-hidden="true" />
       {[
         { href: "/account", label: "Account", icon: UserRound },
+        { href: "/feedback", label: "Feedback", icon: MessageSquarePlus },
         ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Shield }] : []),
       ].map(({ href, label, icon: Icon }) => {
         const active = isActive(href);

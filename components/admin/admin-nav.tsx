@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/admin", label: "Overview", exact: true },
   { href: "/admin/users", label: "Users", exact: false },
+  { href: "/admin/feedback", label: "Feedback", exact: false },
 ];
 
 export function AdminNav() {

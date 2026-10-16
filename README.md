@@ -3,7 +3,7 @@
 **Show up. Leave proof.** A calm habit and challenge tracker built with Next.js (App Router), React, TypeScript, Tailwind CSS v4, Supabase (Auth + Postgres + Row Level Security) and Zod.
 
 ## Contents
-1. [Quick start](#quick-start) · 2. [Database setup and migrations](#database-setup-and-migrations) · 3. [Admin dashboard](#admin-dashboard) · 4. [Limits and plans](#limits-and-plans-entitlements) · 5. [Ads](#ads) · 6. [Policies, support and account deletion](#policies-support-and-account-deletion) · 7. [Configuration reference](#configuration-reference) · 8. [Deploying](#deploying) · 9. [Testing](#testing) · 10. [Limitations](#known-limitations)
+1. [Quick start](#quick-start) · 2. [Database setup and migrations](#database-setup-and-migrations) · 3. [Admin dashboard](#admin-dashboard) · 4. [Limits and plans](#limits-and-plans-entitlements) · 5. [Feedback, data export and cookie choices](#feedback-data-export-and-cookie-choices) · 6. [Landing page and What's new](#landing-page-and-whats-new) · 7. [Ads](#ads) · 8. [Policies, support and account deletion](#policies-support-and-account-deletion) · 9. [Configuration reference](#configuration-reference) · 10. [Deploying](#deploying) · 11. [Testing](#testing) · 12. [Limitations](#known-limitations)
 
 ## Quick start
 Requires Node.js 20.9+ and pnpm.
@@ -25,6 +25,9 @@ Run these in the Supabase SQL Editor (or `supabase db push`), **in order**. Skip
 | 2 | `202610100002_production_hardening.sql` | API grants, constraints, one check-in per day, date-range rules. |
 | 3 | `202610110003_usage_limits.sql` | The old **monthly** creation quotas. Replaced by migration 4. |
 | 4 | `202610120004_admin_entitlements_limits.sql` | Removes the monthly quotas; adds plans/entitlements, active and archived limits (concurrency-safe), activity tracking, admin role and analytics functions, profile fields (optional mobile number), account deletion. |
+| 5 | `202610140005_feedback_and_habit_limit.sql` | Free plan allows **20 active habits** (was 10); adds the `feedback` table (with spam protection), admin feedback functions, and feedback counts in the admin overview. Changes no user data. |
+
+**Migration 5 on a live database.** It only raises the Free plan's `max_active_habits` from 10 to 20 (and only if it is still 10, so a value you customised is kept), replaces two functions to match, and adds the new feedback tables. Nothing is deleted. Because new database functions are added, **reload the API schema** if your project doesn't do it automatically (Supabase: Project Settings -> API -> reload schema, or it picks it up within moments).
 
 **Migration 4 on a live database.** It preserves all habits, challenges, check-ins and profiles. It deletes only the two bookkeeping tables of the old monthly quota (`usage_counters`, `app_limits`), which held counters and settings, no user content. It also trims any display name longer than 60 characters, and back-fills the new activity log once from existing history so admin charts are not empty on day one. **Take a backup first** (Supabase dashboard -> Database -> Backups), since this change is not meant to be undone.
 
@@ -54,7 +57,7 @@ An "Admin" link then appears in your sidebar (it is only a shortcut). Remove acc
 
 ## Limits and plans (entitlements)
 **Free plan limits (live now):**
-- 10 active habits · 10 active challenges
+- 20 active habits · 10 active challenges
 - 20 archived habits · 20 archived challenges
 
 There are no monthly creation quotas any more.
@@ -80,12 +83,32 @@ values ('plus', 'Persist Plus', 30, 30, 100, 100, '{"ad_free": true, "reminders"
 insert into user_plans (user_id, plan_id) values ('<user uuid>', 'plus')
 on conflict (user_id) do update set plan_id = excluded.plan_id;
 ```
+The numbers live in the `plans` table. The public landing page FAQ shows the Free limits from `FREE_DEFAULTS` in `lib/entitlements.ts`; if you change the Free plan in the database, update that constant too so the wording stays accurate.
+
 Nothing about payments, subscriptions, checkout, or billing frequency is implemented, and there are no upgrade buttons. Only `ad_free` is wired to behaviour today (it hides the banner). `reminders` is a stored flag only; no reminder feature exists yet.
+
+## Feedback, data export and cookie choices
+
+**Feedback and feature requests.** Signed-in users open **Feedback** (sidebar, footer, Account page) to send a feature request, improvement idea, bug report, or other note (10 to 2,000 characters). They see everything they have sent, with its status (Received, Under review, Planned, Shipped, Not planned) and any reply from the team. Spam protection is in the database: at most 5 submissions per person per 24 hours, and people cannot set a status or reply themselves.
+
+**Admin inbox.** `/admin/feedback` lists every submission with the sender, filters by status and type, shows live counts, and lets you set a status and an optional reply that the user then sees. The admin overview also shows how many are new. Feedback is deleted with the user's account.
+
+**Data export.** On the Account page, **Download everything (JSON)** (account details, habits, challenges, check-ins, feedback) and **Check-ins for spreadsheets (CSV)**. It uses the user's own session, so it can only ever contain that person's data. CSV cells that start with `=`, `+`, `-` or `@` are neutralised so a malicious habit name cannot run as a spreadsheet formula.
+
+**Cookie choices.** The app sets only essential cookies (sign-in session, time zone, and the remembered cookie choice). The only optional category is advertising, so:
+- While ads are **off**, no banner is shown (there is nothing to consent to). The footer's **Cookie settings** still opens a preferences panel that says so.
+- While ads are **on**, a banner offers **Accept ads** or **Essential only**. Advertising is **opt-in**: no ad code loads and no ad cookies are set until the visitor accepts, and they can withdraw any time from Cookie settings. The choice is stored in the `persist-consent` cookie for about six months.
+- This is a lightweight consent notice, **not a Google-certified consent management platform (CMP)**. If you serve users in the EEA, UK or Switzerland, Google requires a certified CMP for AdSense; add one before enabling ads for those regions.
+
+## Landing page and What's new
+The public home page (`/`) explains the product, shows it, and builds trust using only things that are true: a preview of the Today screen, the consistency graph, how it works, features, a privacy section, a changelog, an FAQ, and clear sign-up calls to action. There are no invented testimonials, user counts, or logos.
+
+**To keep it honest and "actively improving", add an entry to the TOP of `lib/changelog.ts` whenever you ship something** (date, title, one-line detail). The newest four appear on the home page. Redeploy after editing.
 
 ## Ads
 One banner on the signed-in **user dashboard only**, never in the admin dashboard or other pages. Provider code lives in `components/ads/providers.ts`; config in `lib/ads/config.ts`.
 
-**Behaviour:** off unless `NEXT_PUBLIC_ADS_ENABLED=true` **and** a valid publisher ID and slot ID are set; loads asynchronously after the browser is idle; takes no space until an ad actually fills (no layout shift); removes itself if the provider is blocked, offline, or has nothing to show; never breaks the app; hidden for plans with the `ad_free` feature. To disable: set `NEXT_PUBLIC_ADS_ENABLED=false` and redeploy. To replace the provider: add a case in `providers.ts` and `config.ts`.
+**Behaviour:** off unless `NEXT_PUBLIC_ADS_ENABLED=true` **and** a valid publisher ID and slot ID are set; loads asynchronously after the browser is idle and **only after the visitor has accepted advertising cookies**; takes no space until an ad actually fills (no layout shift); removes itself if the provider is blocked, offline, or has nothing to show; never breaks the app; hidden for plans with the `ad_free` feature. To disable: set `NEXT_PUBLIC_ADS_ENABLED=false` and redeploy. To replace the provider: add a case in `providers.ts` and `config.ts`.
 
 **Provider policy (Google AdSense).** Google's AdSense Help states that ads on login-protected pages are allowed, but only after you set up crawler access so Google can review those pages (Google's article: "Display ads on login-protected pages", `support.google.com/adsense/answer/161351`). I have not enabled anything for you. To go live:
 1. Get your AdSense account approved and verify your site.
@@ -102,7 +125,9 @@ Public pages: `/privacy`, `/terms`, `/cookies` (advertising and cookie disclosur
 
 **Account management:** `/account` lets users edit their name and an optional mobile number (validated, stored privately, not shown to admins, not used to send messages), and shows their plan and usage.
 
-**Account deletion:** `/account/delete` (sign-in required). The user must type their account email. The server calls `delete_my_account()`, a database function that deletes **only `auth.uid()`**, with no parameter to name anyone else, and the delete cascades to profile, habits, challenges, check-ins, activity events, plan assignment and admin role. The user is then signed out and sent to a confirmation. Provider backups may retain copies until they expire. There is no data-export feature; the page tells users to contact support for a copy.
+**Your data:** `/account` also offers the JSON and CSV export described above.
+
+**Account deletion:** `/account/delete` (sign-in required). The user must type their account email. The server calls `delete_my_account()`, a database function that deletes **only `auth.uid()`**, with no parameter to name anyone else, and the delete cascades to profile, habits, challenges, check-ins, activity events, plan assignment and admin role. The user is then signed out and sent to a confirmation. Provider backups may retain copies until they expire. The page links to the data export so people can download a copy first. Any feedback they sent is deleted with the account.
 
 ## Configuration reference
 All variables are in `.env.example`. **Every `NEXT_PUBLIC_*` value is baked in at build time: change it, then redeploy.** No variable here is a secret.
@@ -124,7 +149,7 @@ Admin access is configured in the database (see above), not by an environment va
 
 ## Deploying
 1. **Back up** the production database.
-2. Run any migrations you have not yet applied, **in order** (see the table). For an existing live app that is `202610120004_admin_entitlements_limits.sql`. Confirm: `select id, max_active_habits from public.plans;` returns the `free` row.
+2. Run any migrations you have not yet applied, **in order** (see the table). For an app already on migration 4, that is `202610140005_feedback_and_habit_limit.sql`. Confirm: `select id, max_active_habits from public.plans;` shows `free | 20`.
 3. Make yourself admin with `supabase/scripts/grant-admin.sql`.
 4. In your host's environment settings, set the variables above. Leave ads disabled for now.
 5. **Build and deploy** (any change to `NEXT_PUBLIC_*` requires a new build).
@@ -133,11 +158,12 @@ Admin access is configured in the database (see above), not by an environment va
 8. **Test account deletion on a throwaway account in staging first.** It deletes the user from Supabase's `auth.users` from inside a database function, which is standard but depends on your project's setup.
 
 ## Testing
-`pnpm lint`, `pnpm typecheck`, `pnpm test` (32 unit tests: dates and time zones, streaks, challenges, validation, limit messages, ad configuration), `pnpm build`.
+`pnpm lint`, `pnpm typecheck`, `pnpm test` (42 unit tests: dates and time zones, streaks, challenges, validation, limit messages, ad configuration, CSV safety, feedback validation, cookie consent, changelog), `pnpm build`.
 
 ## Known limitations
 - Reminders and payments/plans-upgrade flows are intentionally not built; `reminders` is only a stored flag.
-- Ads are off until you complete the AdSense steps; no consent banner is included.
+- Ads are off until you complete the AdSense steps. The cookie banner is a simple opt-in notice, not a certified CMP.
+- Feedback is one-way plus a status and a short reply; there is no public roadmap, voting, or email notification to the user.
 - Check-ins are for today only, by design.
 - Auth rate limiting / CAPTCHA are Supabase settings, not part of this repo.
 - Activity events grow with use; if needed, prune old rows (`delete from activity_events where created_at < now() - interval '2 years'`), which only reduces the age of historical charts.

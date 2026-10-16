@@ -44,6 +44,24 @@ export const checkinSchema = z.object({
 
 export const idSchema = z.uuid();
 
+export const FEEDBACK_CATEGORIES = ["feature", "improvement", "bug", "other"] as const;
+export const FEEDBACK_STATUSES = ["new", "reviewing", "planned", "done", "declined"] as const;
+
+export const feedbackSchema = z.object({
+  category: z.enum(FEEDBACK_CATEGORIES, "Choose what kind of feedback this is."),
+  message: z
+    .string()
+    .trim()
+    .min(10, "Tell us a little more (at least 10 characters).")
+    .max(2000, "Please keep it under 2,000 characters."),
+});
+
+export const feedbackUpdateSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(FEEDBACK_STATUSES),
+  note: z.string().trim().max(500, "Keep the reply under 500 characters.").default(""),
+});
+
 export function fieldErrors(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};
   for (const issue of error.issues) {

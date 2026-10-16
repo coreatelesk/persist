@@ -8,7 +8,7 @@ vi.spyOn(console, "error").mockImplementation(() => {});
 
 describe("limit messages tell people what to do next", () => {
   it("explains each Free-plan limit from the database error", () => {
-    expect(friendlyDbError({ code: "P0001", message: "limit_reached:active_habits:10" })).toMatch(/10 active habits.*Archive or delete/);
+    expect(friendlyDbError({ code: "P0001", message: "limit_reached:active_habits:20" })).toMatch(/20 active habits.*Archive or delete/);
     expect(friendlyDbError({ message: "limit_reached:active_challenges:10" })).toMatch(/10 active challenges.*Finish, archive, or delete/);
     expect(friendlyDbError({ message: "limit_reached:archived_habits:20" })).toMatch(/archive is full.*20 archived habits.*Delete.*restore/i);
     expect(friendlyDbError({ message: "limit_reached:archived_challenges:20" })).toMatch(/archive is full.*20 archived challenges/i);

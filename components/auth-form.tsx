@@ -19,8 +19,8 @@ function rememberTimeZone() {
   if (zone) document.cookie = `persist-tz=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`;
 }
 
-export function AuthForm({ next, googleEnabled }: { next: string; googleEnabled: boolean }) {
-  const [mode, setMode] = useState<Mode>("signin");
+export function AuthForm({ next, googleEnabled, initialMode = "signin" }: { next: string; googleEnabled: boolean; initialMode?: Mode }) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

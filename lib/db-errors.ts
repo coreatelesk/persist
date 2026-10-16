@@ -14,6 +14,9 @@ export function friendlyDbError(error: DbError, fallback = "Something went wrong
   const limit = /limit_reached:([a-z_]+):(\d+)/.exec(error.message ?? "");
   if (limit && isLimitKind(limit[1])) return limitReachedMessage(limit[1], limit[2]);
 
+  const rate = /rate_limited:feedback:(\d+)/.exec(error.message ?? "");
+  if (rate) return `Thanks for the enthusiasm! You've already sent ${rate[1]} suggestions in the last 24 hours. Please try again tomorrow.`;
+
   console.error("[persist] database error", error.code, error.message);
 
   if (message.includes("forbidden")) return "You don't have permission to do that.";
